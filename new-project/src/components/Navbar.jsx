@@ -14,11 +14,7 @@ import {
 
 const Navbar = () => {
   const location = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Load theme preference from localStorage
-    const saved = localStorage.getItem('mindlog-theme');
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -26,6 +22,9 @@ const Navbar = () => {
   const [userName, setUserName] = useState('Khushi');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Enhanced navigation structure with dropdowns
   const navItems = [
@@ -35,8 +34,6 @@ const Navbar = () => {
       label: 'Features', 
       icon: Heart,
       dropdown: [
-        // { path: '/features/mood-tracking', label: 'Mood Tracking', icon: Heart },
-        // { path: '/features/visualizations', label: 'Data Insights', icon: TrendingUp },
         { path: '/features/reminders', label: 'Daily Reminders', icon: Bell },
         { path: '/features/calendar', label: 'Mood Calendar', icon: Calendar }
       ]
@@ -49,20 +46,13 @@ const Navbar = () => {
       dropdown: [
         { path: '/journal/entries', label: 'View Entries', icon: Eye },
         { path: '/journal/new', label: 'Add New Entry', icon: PlusCircle },
-        // { path: '/journal/insights', label: 'Mood Insights', icon: Brain }
       ]
     },
     { 
       path: '/about', 
       label: 'About', 
       icon: Info,
-      // dropdown: [
-      //   { path: '/about/story', label: 'What We Do', icon: BookOpen },
-      //   // { path: '/about/team', label: 'Team', icon: Users },
-      //   // { path: '/about/testimonials', label: 'Testimonials', icon: Award }
-      // ]
     },
-    // { path: '/contact', label: 'Contact', icon: Mail },
   ];
 
   const userMenuItems = [
@@ -71,11 +61,10 @@ const Navbar = () => {
     { label: 'Logout', icon: LogOut, action: () => setIsLoggedIn(false) },
   ];
 
-  // Toggle dark mode and save to localStorage
+  // Toggle dark mode
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
-    localStorage.setItem('mindlog-theme', JSON.stringify(newMode));
     document.documentElement.classList.toggle('dark', newMode);
   };
 
@@ -117,93 +106,202 @@ const Navbar = () => {
   const openAuthModal = (mode) => {
     setAuthMode(mode);
     setShowAuthModal(true);
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setIsMobileMenuOpen(false);
   };
 
   const closeAuthModal = () => {
     setShowAuthModal(false);
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+  };
+
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    console.log('Email:', email);
+    console.log('Password:', password);
+    if (authMode === 'register') {
+      console.log('Confirm Password:', confirmPassword);
+    }
+    // Simulate login
+    setIsLoggedIn(true);
+    closeAuthModal();
   };
 
   const AuthModal = () => (
     showAuthModal && (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div className={`relative w-full max-w-md mx-4 rounded-2xl shadow-2xl ${
-          isDarkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+        <div className="relative w-full max-w-4xl mx-4 h-3/4 rounded-3xl shadow-2xl overflow-hidden">
           <button
             onClick={closeAuthModal}
-            className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
-              isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
+            className="absolute top-4 right-4 z-10 p-2 rounded-full transition-colors bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
           >
             <X size={20} />
           </button>
           
-          <div className="p-8">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="text-white" size={28} />
+          <div className="flex h-full">
+            {/* Left Side - Image */}
+            <div className="w-2/5 bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center rounded-l-3xl">
+              <div className="text-center text-white">
+                <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
+                  <Heart className="text-white animate-pulse" size={48} />
+                </div>
+                <h2 className="text-3xl font-bold mb-2">Welcome to MindLog</h2>
+                <p className="text-pink-100 text-lg">Track your emotions, improve your wellbeing</p>
               </div>
-              <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                {authMode === 'login' ? 'Welcome Back' : 'Join MindLog'}
-              </h2>
             </div>
 
-            <div className="flex rounded-lg p-1 mb-6 bg-gray-100 dark:bg-gray-700">
-              {['login', 'register'].map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setAuthMode(mode)}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                    authMode === mode
-                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  {mode === 'login' ? 'Login' : 'Register'}
-                </button>
-              ))}
-            </div>
+            {/* Right Side - Form */}
+            <div className={`w-3/5 ${isDarkMode ? 'bg-gray-800' : 'bg-gradient-to-br from-pink-50 to-purple-50'} rounded-r-3xl`}>
+              <form onSubmit={handleAuthSubmit} className="h-full w-full p-10 flex flex-col">
+                
+                {/* Header with Logo */}
+                <div className="h-[20%] w-full flex items-center justify-center mb-5">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                      <Heart className="text-white" size={28} />
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                        MindLog
+                      </h1>
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {authMode === 'login' ? 'Welcome Back' : 'Join MindLog'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="space-y-4">
-              <input
-                type="email"
-                placeholder="Email address"
-                className={`w-full px-4 py-3 rounded-lg border transition-colors ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500' 
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-pink-500'
-                } focus:outline-none focus:ring-2 focus:ring-pink-500/20`}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className={`w-full px-4 py-3 rounded-lg border transition-colors ${
-                  isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500' 
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-pink-500'
-                } focus:outline-none focus:ring-2 focus:ring-pink-500/20`}
-              />
-              {authMode === 'register' && (
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  className={`w-full px-4 py-3 rounded-lg border transition-colors ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-purple-500' 
-                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-pink-500'
-                  } focus:outline-none focus:ring-2 focus:ring-pink-500/20`}
-                />
-              )}
-              
-              <button
-                onClick={() => {
-                  setIsLoggedIn(true);
-                  closeAuthModal();
-                }}
-                className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-pink-500/30 transition-all duration-300 hover:scale-[1.02]"
-              >
-                {authMode === 'login' ? 'Sign In' : 'Create Account'}
-              </button>
+                {/* Toggle between Login/Register */}
+                <div className="flex rounded-lg p-1 mb-6 bg-gray-100 dark:bg-gray-700">
+                  {['login', 'register'].map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setAuthMode(mode)}
+                      className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                        authMode === mode
+                          ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {mode === 'login' ? 'Login' : 'Register'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Email Input */}
+                <div className="h-[20%] w-full mb-4">
+                  <label className={`text-lg font-semibold mb-1 block ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                    Email
+                  </label>
+                  <div className="flex items-center bg-white dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <Mail className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-2`} size={18} />
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      className="w-full p-1 ml-3 text-md bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div className="h-[20%] w-full mb-4">
+                  <label className={`text-lg font-semibold mb-1 block ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                    Password
+                  </label>
+                  <div className="flex items-center bg-white dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <Settings className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-2`} size={18} />
+                    <input
+                      type="password"
+                      placeholder="Enter your password"
+                      className="w-full p-1 ml-3 text-md bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {authMode === 'login' && (
+                    <div className="flex justify-end mt-2">
+                      <a href="#" className="text-sm text-pink-600 dark:text-pink-400 font-semibold hover:underline">
+                        Forgot Password?
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Confirm Password for Register */}
+                {authMode === 'register' && (
+                  <div className="h-[20%] w-full mb-4">
+                    <label className={`text-lg font-semibold mb-1 block ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                      Confirm Password
+                    </label>
+                    <div className="flex items-center bg-white dark:bg-gray-700 p-3 rounded-xl border border-gray-200 dark:border-gray-600">
+                      <Settings className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-2`} size={18} />
+                      <input
+                        type="password"
+                        placeholder="Confirm your password"
+                        className="w-full p-1 ml-3 text-md bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className="h-[10%] w-full mt-4">
+                  <button 
+                    type="submit" 
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-full font-bold text-xl flex justify-center items-center p-3 shadow-lg hover:shadow-pink-500/30 transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    {authMode === 'login' ? 'Login' : 'Create Account'}
+                  </button>
+                </div>
+
+                {/* OR Section with Social Login */}
+                <div className="w-full flex-1 flex flex-col justify-center">
+                  <div className="w-full flex items-center mt-6 mb-4">
+                    <hr className={`flex-grow border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`} />
+                    <h2 className={`mx-4 font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Or Continue With
+                    </h2>
+                    <hr className={`flex-grow border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`} />
+                  </div>
+                  
+                  <div className="flex justify-center space-x-6 mb-4">
+                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                      <span className="text-white font-bold text-sm">G</span>
+                    </div>
+                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                      <span className="text-white font-bold text-sm">f</span>
+                    </div>
+                    <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                      <span className="text-white font-bold text-sm">⚪</span>
+                    </div>
+                  </div>
+
+                  <div className="w-full flex justify-center items-center">
+                    <span className={`font-bold text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {authMode === 'login' ? "Don't have an account?" : "Already have an account?"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                      className="text-pink-600 dark:text-pink-400 font-semibold text-sm hover:underline ml-1 cursor-pointer"
+                    >
+                      {authMode === 'login' ? 'Sign Up here!' : 'Login here!'}
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>
@@ -474,10 +572,12 @@ const Navbar = () => {
                     </button>
                     <button
                       onClick={() => openAuthModal('register')}
-                      className="w-full flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium transition-all duration-300"
+                      className="w-full flex items-center space-x-3 px-4 py-3 bg-
+
+                      gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium shadow-lg hover:shadow-pink-500/30 transition-all duration-300"
                     >
                       <UserPlus size={20} />
-                      <span>Register</span>
+                      <span className="font-medium">Register</span>
                     </button>
                   </div>
                 )}
@@ -486,11 +586,14 @@ const Navbar = () => {
           )}
         </div>
       </nav>
-
-      {/* Auth Modal */}
-      <AuthModal />
+      
+      {/* Render Auth Modal */}
+      {AuthModal()}
     </>
   );
 };
 
 export default Navbar;
+
+
+
