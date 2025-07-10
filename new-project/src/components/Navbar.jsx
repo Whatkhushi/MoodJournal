@@ -1,16 +1,46 @@
 import React, { useState, useEffect } from 'react';
-// Mock Link and useLocation for demo purposes
-const Link = ({ to, children, ...props }) => (
-  <a href={to} {...props}>{children}</a>
-);
-const useLocation = () => ({ pathname: '/' });
-
 import { 
   Home, Heart, BarChart3, BookOpen, Info, Mail, 
   LogIn, UserPlus, User, Settings, LogOut, Moon, Sun, 
   Menu, X, ChevronDown, TrendingUp, Bell, Calendar,
   PlusCircle, Eye, Brain, Users, Award, MessageCircle
 } from 'lucide-react';
+
+// Improved Link component with proper client-side navigation
+const Link = ({ to, children, onClick, ...props }) => {
+  const handleClick = (e) => {
+    e.preventDefault(); // Prevent default anchor behavior
+    if (onClick) onClick(e);
+    // Only update if we're not already on this path
+    if (window.location.pathname !== to) {
+      window.history.pushState({}, '', to);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      window.scrollTo(0, 0);
+    }
+  };
+
+  return (
+    <a href={to} onClick={handleClick} {...props}>
+      {children}
+    </a>
+  );
+};
+
+// Custom hook to track location
+const useLocation = () => {
+  const [pathname, setPathname] = useState(window.location.pathname || '/');
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  return { pathname };
+};
 
 const Navbar = () => {
   const location = useLocation();
@@ -21,12 +51,12 @@ const Navbar = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState('Khushi');
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Enhanced navigation structure with dropdowns
+  // Navigation structure
   const navItems = [
     { path: '/', label: 'Home', icon: Home },
     { 
@@ -48,11 +78,7 @@ const Navbar = () => {
         { path: '/journal/new', label: 'Add New Entry', icon: PlusCircle },
       ]
     },
-    { 
-      path: '/about', 
-      label: 'About', 
-      icon: Info,
-    },
+    { path: '/about', label: 'About', icon: Info },
   ];
 
   const userMenuItems = [
@@ -93,7 +119,7 @@ const Navbar = () => {
   }, [isMobileMenuOpen, isUserDropdownOpen, activeDropdown]);
 
   const handleDropdownToggle = (itemLabel) => {
-    setActiveDropdown(activeDropdown === itemLabel ? null : itemLabel);
+    setActiveDropdown(prev => prev === itemLabel ? null : itemLabel);
   };
 
   const smoothScrollToSection = (sectionId) => {
@@ -121,13 +147,12 @@ const Navbar = () => {
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
-    console.log('Email:', email);
-    console.log('Password:', password);
-    if (authMode === 'register') {
-      console.log('Confirm Password:', confirmPassword);
+    if (authMode === 'register' && password !== confirmPassword) {
+      alert("Passwords don't match!");
+      return;
     }
-    // Simulate login
     setIsLoggedIn(true);
+    setUserName(email.split('@')[0]);
     closeAuthModal();
   };
 
@@ -143,7 +168,6 @@ const Navbar = () => {
           </button>
           
           <div className="flex h-full">
-            {/* Left Side - Image */}
             <div className="w-2/5 bg-gradient-to-br from-pink-400 to-purple-600 flex items-center justify-center rounded-l-3xl">
               <div className="text-center text-white">
                 <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
@@ -154,11 +178,8 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Right Side - Form */}
             <div className={`w-3/5 ${isDarkMode ? 'bg-gray-800' : 'bg-gradient-to-br from-pink-50 to-purple-50'} rounded-r-3xl`}>
               <form onSubmit={handleAuthSubmit} className="h-full w-full p-10 flex flex-col">
-                
-                {/* Header with Logo */}
                 <div className="h-[20%] w-full flex items-center justify-center mb-5">
                   <div className="flex items-center space-x-3">
                     <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
@@ -175,7 +196,6 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* Toggle between Login/Register */}
                 <div className="flex rounded-lg p-1 mb-6 bg-gray-100 dark:bg-gray-700">
                   {['login', 'register'].map((mode) => (
                     <button
@@ -193,7 +213,6 @@ const Navbar = () => {
                   ))}
                 </div>
 
-                {/* Email Input */}
                 <div className="h-[20%] w-full mb-4">
                   <label className={`text-lg font-semibold mb-1 block ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                     Email
@@ -211,7 +230,6 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                {/* Password Input */}
                 <div className="h-[20%] w-full mb-4">
                   <label className={`text-lg font-semibold mb-1 block ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                     Password
@@ -229,14 +247,13 @@ const Navbar = () => {
                   </div>
                   {authMode === 'login' && (
                     <div className="flex justify-end mt-2">
-                      <a href="#" className="text-sm text-pink-600 dark:text-pink-400 font-semibold hover:underline">
+                      <button type="button" className="text-sm text-pink-600 dark:text-pink-400 font-semibold hover:underline">
                         Forgot Password?
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
 
-                {/* Confirm Password for Register */}
                 {authMode === 'register' && (
                   <div className="h-[20%] w-full mb-4">
                     <label className={`text-lg font-semibold mb-1 block ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -256,7 +273,6 @@ const Navbar = () => {
                   </div>
                 )}
 
-                {/* Submit Button */}
                 <div className="h-[10%] w-full mt-4">
                   <button 
                     type="submit" 
@@ -266,7 +282,6 @@ const Navbar = () => {
                   </button>
                 </div>
 
-                {/* OR Section with Social Login */}
                 <div className="w-full flex-1 flex flex-col justify-center">
                   <div className="w-full flex items-center mt-6 mb-4">
                     <hr className={`flex-grow border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`} />
@@ -277,15 +292,15 @@ const Navbar = () => {
                   </div>
                   
                   <div className="flex justify-center space-x-6 mb-4">
-                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                    <button type="button" className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
                       <span className="text-white font-bold text-sm">G</span>
-                    </div>
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                    </button>
+                    <button type="button" className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
                       <span className="text-white font-bold text-sm">f</span>
-                    </div>
-                    <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
+                    </button>
+                    <button type="button" className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-transform">
                       <span className="text-white font-bold text-sm">⚪</span>
-                    </div>
+                    </button>
                   </div>
 
                   <div className="w-full flex justify-center items-center">
@@ -318,8 +333,6 @@ const Navbar = () => {
       }`}>
         <div className="container mx-auto px-4 lg:px-6">
           <div className="flex justify-between items-center py-4">
-
-            {/* Logo */}
             <Link 
               to="/" 
               className="flex items-center space-x-3 group hover:scale-105 transition-transform duration-300"
@@ -332,27 +345,31 @@ const Navbar = () => {
               </h1>
             </Link>
 
-            {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-1">
               {navItems.map(({ path, label, icon: Icon, dropdown }) => (
                 <div key={path} className="relative dropdown-container">
                   {dropdown ? (
-                    // Dropdown Menu Item
                     <button
                       onClick={() => handleDropdownToggle(label)}
                       onMouseEnter={() => setActiveDropdown(label)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleDropdownToggle(label);
+                        }
+                      }}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 transform hover:scale-105 group ${
                         activeDropdown === label
                           ? `${isDarkMode ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30' : 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg shadow-pink-500/30'}`
                           : `${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}`
                       }`}
+                      aria-expanded={activeDropdown === label}
+                      aria-haspopup="true"
                     >
                       <Icon size={18} className="group-hover:rotate-12 transition-transform duration-300" />
                       <span className="font-medium">{label}</span>
                       <ChevronDown size={14} className={`transition-transform duration-300 ${activeDropdown === label ? 'rotate-180' : ''}`} />
                     </button>
                   ) : (
-                    // Regular Menu Item
                     <Link
                       to={path}
                       onClick={(e) => {
@@ -372,7 +389,6 @@ const Navbar = () => {
                     </Link>
                   )}
 
-                  {/* Dropdown Content */}
                   {dropdown && activeDropdown === label && (
                     <div 
                       className={`absolute top-full left-0 mt-2 w-56 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-300 animate-in slide-in-from-top-2 ${
@@ -381,6 +397,7 @@ const Navbar = () => {
                           : 'bg-white/95 border-gray-200'
                       }`}
                       onMouseLeave={() => setActiveDropdown(null)}
+                      role="menu"
                     >
                       {dropdown.map(({ path, label: dropLabel, icon: DropIcon }) => (
                         <Link
@@ -392,6 +409,7 @@ const Navbar = () => {
                               ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
                               : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                           }`}
+                          role="menuitem"
                         >
                           <DropIcon size={16} className="group-hover:scale-110 transition-transform duration-200" />
                           <span className="font-medium">{dropLabel}</span>
@@ -403,10 +421,7 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center space-x-4">
-              
-              {/* Theme Toggle */}
               <button
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
@@ -415,20 +430,27 @@ const Navbar = () => {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-md'
                 }`}
                 title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}
+                aria-label={`Toggle ${isDarkMode ? 'light' : 'dark'} mode`}
               >
                 {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
               </button>
 
-              {/* User Authentication */}
               {isLoggedIn ? (
                 <div className="relative user-dropdown-container">
                   <button
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setIsUserDropdownOpen(!isUserDropdownOpen);
+                      }
+                    }}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-full transition-all duration-300 hover:scale-105 ${
                       isDarkMode 
                         ? 'bg-gray-800 text-white hover:bg-gray-700 shadow-lg' 
                         : 'bg-white text-gray-700 hover:bg-gray-50 shadow-md border border-gray-200'
                     }`}
+                    aria-expanded={isUserDropdownOpen}
+                    aria-haspopup="true"
                   >
                     <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                       {userName.charAt(0).toUpperCase()}
@@ -437,13 +459,14 @@ const Navbar = () => {
                     <ChevronDown size={16} className={`transition-transform duration-300 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
-                  {/* User Dropdown */}
                   {isUserDropdownOpen && (
                     <div className={`absolute right-0 mt-2 w-48 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-300 animate-in slide-in-from-top-2 ${
                       isDarkMode 
                         ? 'bg-gray-800/90 border-gray-700' 
                         : 'bg-white/90 border-gray-200'
-                    }`}>
+                    }`}
+                    role="menu"
+                    >
                       {userMenuItems.map(({ label, icon: Icon, action }) => (
                         <button
                           key={label}
@@ -451,11 +474,18 @@ const Navbar = () => {
                             action();
                             setIsUserDropdownOpen(false);
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              action();
+                              setIsUserDropdownOpen(false);
+                            }
+                          }}
                           className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors duration-200 first:rounded-t-xl last:rounded-b-xl group ${
                             isDarkMode 
                               ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
                               : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                           }`}
+                          role="menuitem"
                         >
                           <Icon size={16} className="group-hover:scale-110 transition-transform duration-200" />
                           <span>{label}</span>
@@ -487,7 +517,6 @@ const Navbar = () => {
                 </div>
               )}
 
-              {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className={`lg:hidden p-2 rounded-lg transition-all duration-300 mobile-menu-container ${
@@ -495,105 +524,111 @@ const Navbar = () => {
                     ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
                     : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                 }`}
+                aria-label="Toggle mobile menu"
+                aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
             </div>
           </div>
 
-          {/* Mobile Menu */}
-          {isMobileMenuOpen && (
-            <div className={`lg:hidden border-t backdrop-blur-md mobile-menu-container transition-all duration-300 ${
-              isDarkMode ? 'border-gray-700 bg-gray-900/95' : 'border-gray-200 bg-white/95'
-            }`}>
-              <div className="py-4 space-y-2">
-                {navItems.map(({ path, label, icon: Icon, dropdown }) => (
-                  <div key={path}>
-                    {dropdown ? (
-                      <>
-                        <button
-                          onClick={() => handleDropdownToggle(`mobile-${label}`)}
-                          className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-300 ${
-                            isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <Icon size={20} />
-                            <span className="font-medium">{label}</span>
-                          </div>
-                          <ChevronDown size={16} className={`transition-transform duration-300 ${activeDropdown === `mobile-${label}` ? 'rotate-180' : ''}`} />
-                        </button>
-                        {activeDropdown === `mobile-${label}` && (
-                          <div className="ml-4 mt-2 space-y-1">
-                            {dropdown.map(({ path, label: dropLabel, icon: DropIcon }) => (
-                              <Link
-                                key={path}
-                                to={path}
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all duration-300 ${
-                                  isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                }`}
-                              >
-                                <DropIcon size={18} />
-                                <span>{dropLabel}</span>
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <Link
-                        to={path}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                          location.pathname === path
-                            ? `${isDarkMode ? 'bg-purple-600 text-white' : 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'}`
-                            : `${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`
+          <div className={`lg:hidden border-t backdrop-blur-md mobile-menu-container transition-all duration-300 overflow-hidden ${
+            isMobileMenuOpen ? 'max-h-[1000px]' : 'max-h-0'
+          } ${
+            isDarkMode ? 'border-gray-700 bg-gray-900/95' : 'border-gray-200 bg-white/95'
+          }`}>
+            <div className="py-4 space-y-2">
+              {navItems.map(({ path, label, icon: Icon, dropdown }) => (
+                <div key={path}>
+                  {dropdown ? (
+                    <>
+                      <button
+                        onClick={() => handleDropdownToggle(`mobile-${label}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            handleDropdownToggle(`mobile-${label}`);
+                          }
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-300 ${
+                          isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
                         }`}
+                        aria-expanded={activeDropdown === `mobile-${label}`}
                       >
-                        <Icon size={20} />
-                        <span className="font-medium">{label}</span>
-                      </Link>
-                    )}
-                  </div>
-                ))}
-                
-                {/* Mobile Auth Buttons */}
-                {!isLoggedIn && (
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                    <button
-                      onClick={() => openAuthModal('login')}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                        isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                        <div className="flex items-center space-x-3">
+                          <Icon size={20} />
+                          <span className="font-medium">{label}</span>
+                        </div>
+                        <ChevronDown size={16} className={`transition-transform duration-300 ${activeDropdown === `mobile-${label}` ? 'rotate-180' : ''}`} />
+                      </button>
+                      {activeDropdown === `mobile-${label}` && (
+                        <div className="ml-4 mt-2 space-y-1">
+                          {dropdown.map(({ path, label: dropLabel, icon: DropIcon }) => (
+                            <Link
+                              key={path}
+                              to={path}
+                              onClick={() => {
+                                setIsMobileMenuOpen(false);
+                                setActiveDropdown(null);
+                              }}
+                              className={`flex items-center space-x-3 px-4 py-2 rounded-lg transition-all duration-300 ${
+                                isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                              }`}
+                            >
+                              <DropIcon size={18} />
+                              <span>{dropLabel}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      to={path}
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setActiveDropdown(null);
+                      }}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                        location.pathname === path
+                          ? `${isDarkMode ? 'bg-purple-600 text-white' : 'bg-gradient-to-r from-pink-500 to-purple-500 text-white'}`
+                          : `${isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`
                       }`}
                     >
-                      <LogIn size={20} />
-                      <span className="font-medium">Login</span>
-                    </button>
-                    <button
-                      onClick={() => openAuthModal('register')}
-                      className="w-full flex items-center space-x-3 px-4 py-3 bg-
-
-                      gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium shadow-lg hover:shadow-pink-500/30 transition-all duration-300"
-                    >
-                      <UserPlus size={20} />
-                      <span className="font-medium">Register</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+                      <Icon size={20} />
+                      <span className="font-medium">{label}</span>
+                    </Link>
+                  )}
+                </div>
+              ))}
+              
+              {!isLoggedIn && (
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                  <button
+                    onClick={() => openAuthModal('login')}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                      isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <LogIn size={20} />
+                    <span className="font-medium">Login</span>
+                  </button>
+                  <button
+                    onClick={() => openAuthModal('register')}
+                    className="w-full flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg font-medium shadow-lg hover:shadow-pink-500/30 transition-all duration-300"
+                  >
+                    <UserPlus size={20} />
+                    <span className="font-medium">Register</span>
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </nav>
       
-      {/* Render Auth Modal */}
       {AuthModal()}
     </>
   );
 };
 
 export default Navbar;
-
-
-
